@@ -1,73 +1,72 @@
-# Welcome to your Lovable project
+# Work Tracker 📝🚀
 
-## Project info
+A gamified daily-activity journal that helps software engineers log work, visualise progress, and stay motivated with streaks & achievements.
 
-**URL**: https://lovable.dev/projects/230f3f53-32a9-4bec-bbaa-f3977a3a9375
+## ✨ Key Features
 
-## How can I edit this code?
+• **Daily Activity Log** – quick form to record what you worked on each day, with category tags (Development, Testing, Analysis, Debugging, Learning, Work Items).  
+• **Timeline** – filterable, scrollable list of past entries (Last 7 Days, 30 Days, etc.) with inline edit & delete.  
+• **Stats & Achievements** – automatic streak tracking, unlockable badges (First Step, Week Warrior, 14-Day Streak, 100-Day Legend, etc.).  
+• **Analytics Dashboard** – charts for weekly activity, 30-day trend and tag distribution (interactive pie chart).  
+• **Sync & Auth** – Firebase Authentication (email+password) and Express + MongoDB backend (deployed on Render).  
+• **Offline-friendly** – entries cached in local storage; UI works even without network.
 
-There are several ways of editing your application.
+## 🏗️ Tech Stack
 
-**Use Lovable**
+Front-end
+- React 18 + Vite + TypeScript
+- TailwindCSS + shadcn/ui components
+- Zustand state management
+- Recharts for data-viz
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/230f3f53-32a9-4bec-bbaa-f3977a3a9375) and start prompting.
+Back-end (separate repo)
+- Express router deployed as Firebase Cloud Function (or standalone on Render)
+- MongoDB Atlas
 
-Changes made via Lovable will be committed automatically to this repo.
+CI/CD
+- GitHub Actions → Firebase Hosting (static front-end)  
+- Render auto-deploy for backend
 
-**Use your preferred IDE**
+## 🚀 Local Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# 1. Clone & install
+git clone https://github.com/<you>/work-tracker.git
+cd work-tracker
+npm install
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# 2. Create .env
+cp .env.example .env        # fill values (see below)
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# 3. Run dev server
+npm run dev                 # http://localhost:5173
 ```
 
-**Edit a file directly in GitHub**
+`.env` keys (front-end)
+```
+VITE_API_URL=http://localhost:4000       # or Render URL in prod
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+For backend setup see **functions/README.md** in the server repo.
 
-**Use GitHub Codespaces**
+## 📦 Production Deploy
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **Push to GitHub** – repo is the single source of truth; secrets and `node_modules` are ignored via `.gitignore`.
+2. **Firebase Hosting** – GitHub Action builds (`vite build`) and deploys on every push to `main`.
+3. **Render** – backend auto-deploys from its repo; environment variables configured in Render dashboard.
+4. **UptimeRobot** – pings `/health` endpoint to keep Render dyno awake.
 
-## What technologies are used for this project?
+## 🤝 Contributing
 
-This project is built with:
+Issues and PRs are welcome!  
+Run `npm run lint` and `npm run build` before submitting.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📄 License
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/230f3f53-32a9-4bec-bbaa-f3977a3a9375) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+MIT © 2025 Shashank Nadikatla
