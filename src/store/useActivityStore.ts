@@ -324,57 +324,35 @@ export const useActivityStore = create<ActivityState>()(
           return;
         }
 
-        // Get unique dates and sort them
+        // Unique entry dates, most-recent first
         const uniqueDates = Array.from(
-          new Set(entries.map((entry) => entry.date))
-        ).sort((a, b) => b.localeCompare(a)); // Most recent first
+          new Set(entries.map((e) => e.date))
+        ).sort((a, b) => b.localeCompare(a));
 
+        // ----- current streak (today/yesterday/etc.) -----
         let currentStreak = 0;
-        let longestStreak = 0;
-        let tempStreak = 0;
-        const today = format(startOfDay(new Date()), "yyyy-MM-dd");
-        const yesterday = format(
-          startOfDay(new Date(Date.now() - 24 * 60 * 60 * 1000)),
-          "yyyy-MM-dd"
-        );
+        let lastDateStr = format(startOfDay(new Date()), "yyyy-MM-dd");
 
-        // Check if we have an entry today or yesterday to maintain streak
-        const hasRecentEntry =
-          uniqueDates.includes(today) || uniqueDates.includes(yesterday);
-
-        if (hasRecentEntry) {
-          let checkDate = uniqueDates.includes(today) ? today : yesterday;
-          let checkIndex = uniqueDates.findIndex((date) => date === checkDate);
-
-          while (checkIndex < uniqueDates.length) {
-            const currentDate = uniqueDates[checkIndex];
-            const expectedDate = format(
-              startOfDay(
-                new Date(Date.now() - currentStreak * 24 * 60 * 60 * 1000)
-              ),
-              "yyyy-MM-dd"
-            );
-
-            if (currentDate === expectedDate) {
-              currentStreak++;
-              tempStreak++;
-              longestStreak = Math.max(longestStreak, tempStreak);
-            } else {
-              break;
-            }
-
-            checkIndex++;
+        for (const dateStr of uniqueDates) {
+          const diff = differenceInDays(
+            new Date(lastDateStr),
+            new Date(dateStr)
+          );
+          if (diff === 0 || diff === 1) {
+            currentStreak++;
+            lastDateStr = dateStr; // continue chain
+          } else {
+            break;
           }
         }
 
-        // Calculate longest streak from all data
-        tempStreak = 1;
+        // ----- longest streak overall -----
+        let longestStreak = 1;
+        let tempStreak = 1;
         for (let i = 1; i < uniqueDates.length; i++) {
-          const prevDate = new Date(uniqueDates[i - 1]);
-          const currDate = new Date(uniqueDates[i]);
-          const daysDiff = differenceInDays(prevDate, currDate);
-
-          if (daysDiff === 1) {
+          const prev = new Date(uniqueDates[i - 1]);
+          const curr = new Date(uniqueDates[i]);
+          if (differenceInDays(prev, curr) === 1) {
             tempStreak++;
             longestStreak = Math.max(longestStreak, tempStreak);
           } else {

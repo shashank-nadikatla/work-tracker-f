@@ -3,10 +3,16 @@ import { FireIcon, TrophyIcon, SparklesIcon } from "@heroicons/react/24/solid";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useActivityStore } from "@/store/useActivityStore";
+import { format, startOfDay } from "date-fns";
 
 export const StreakTracker: React.FC = () => {
-  const { currentStreak, longestStreak, achievements, calculateStreak } =
-    useActivityStore();
+  const {
+    currentStreak,
+    longestStreak,
+    achievements,
+    calculateStreak,
+    entries,
+  } = useActivityStore();
 
   useEffect(() => {
     calculateStreak();
@@ -22,6 +28,9 @@ export const StreakTracker: React.FC = () => {
       ? 100
       : 365;
   const progressToNext = Math.min((currentStreak / nextMilestone) * 100, 100);
+
+  const todayStr = format(startOfDay(new Date()), "yyyy-MM-dd");
+  const hasEntryToday = entries.some((e) => e.date === todayStr);
 
   const getStreakMessage = () => {
     if (currentStreak === 0) return "Start your journey today! 🚀";
@@ -62,6 +71,13 @@ export const StreakTracker: React.FC = () => {
               <p className="text-sm text-muted-foreground">Days in a row</p>
             </div>
           </div>
+
+          {/* Reminder to log today */}
+          {!hasEntryToday && currentStreak > 0 && (
+            <p className="text-sm text-orange-500 text-center">
+              Log an activity today to keep the streak!
+            </p>
+          )}
 
           {/* Streak Counter */}
           <div className="text-center py-4">
