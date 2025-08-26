@@ -56,12 +56,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
       name: tag,
       value: count,
       color: [
-        "hsl(25, 95%, 55%)", // primary
-        "hsl(145, 80%, 50%)", // success
-        "hsl(210, 100%, 60%)", // accent
+        "hsl(25, 95%, 55%)", // orange
+        "hsl(145, 80%, 50%)", // green
+        "hsl(210, 100%, 60%)", // blue
         "hsl(280, 100%, 70%)", // purple
         "hsl(45, 100%, 60%)", // yellow
-      ][index % 5],
+        "hsl(0, 80%, 60%)", // red
+      ][index % 6],
     }));
 
     // Weekly activity
@@ -262,6 +263,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
                       outerRadius={80}
                       paddingAngle={5}
                       dataKey="value"
+                      // @ts-ignore property exists in runtime types
                       activeIndex={activeTagIndex ?? -1}
                       activeShape={(props: any) => (
                         <Sector {...props} innerRadius={40} outerRadius={90} />
