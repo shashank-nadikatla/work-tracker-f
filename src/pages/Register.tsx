@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 const Register = () => {
   const { register } = useAuth();
@@ -27,7 +28,14 @@ const Register = () => {
         className="w-full max-w-sm bg-card p-6 rounded-lg shadow-md space-y-4"
         onSubmit={handleSubmit}
       >
-        <h1 className="text-2xl font-semibold text-center">Register</h1>
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
+        >
+          <ArrowLeftIcon className="w-4 h-4" />
+        </button>
+        <h1 className="text-2xl font-semibold text-center">Sign Up</h1>
         {error && <p className="text-destructive text-sm">{error}</p>}
         <Input
           placeholder="Email"
@@ -44,10 +52,10 @@ const Register = () => {
           required
         />
         <Button type="submit" className="w-full">
-          Register
+          Sign Up
         </Button>
         <p className="text-sm text-center text-muted-foreground">
-          Already have an account? {" "}
+          Already have an account?{" "}
           <Link
             to="/login"
             className="text-primary hover:underline font-medium"
