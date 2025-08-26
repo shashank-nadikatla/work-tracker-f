@@ -8,6 +8,7 @@ import {
   BookOpenIcon,
   MagnifyingGlassIcon,
   WrenchIcon,
+  RocketLaunchIcon,
 } from "@heroicons/react/24/solid";
 import { CalendarIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,12 @@ const activityTags = [
     label: "Work Items",
     icon: UsersIcon,
     color: "text-teal-500",
+  },
+  {
+    id: "deployment",
+    label: "Deployment",
+    icon: RocketLaunchIcon,
+    color: "text-cyan-500",
   },
 ];
 
@@ -152,9 +159,7 @@ export const ActivityLogger: React.FC = () => {
 
         {/* Tag Selection */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-foreground">
-            Category Tags
-          </label>
+          <label className="text-sm font-medium text-foreground">Tags</label>
           <div className="flex flex-wrap gap-2">
             {activityTags.map((tag) => {
               const Icon = tag.icon;

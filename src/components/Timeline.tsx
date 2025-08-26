@@ -67,6 +67,7 @@ export const Timeline: React.FC<TimelineProps> = ({
     "debugging",
     "learning",
     "work-items",
+    "deployment",
   ];
   const allTags = useMemo(() => {
     const tags = new Set<string>(masterTags);
@@ -118,6 +119,7 @@ export const Timeline: React.FC<TimelineProps> = ({
       debugging: "bg-red-500/10 text-red-500 border-red-500/20",
       learning: "bg-purple-500/10 text-purple-500 border-purple-500/20",
       "work-items": "bg-teal-500/10 text-teal-500 border-teal-500/20",
+      deployment: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
     };
     return (
       colors[tag.toLowerCase() as keyof typeof colors] ||
