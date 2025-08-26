@@ -67,6 +67,14 @@ const Login = () => {
             Register
           </Link>
         </p>
+        <p className="text-xs text-center mt-2">
+          <Link
+            to="/privacy"
+            className="text-primary hover:underline font-medium"
+          >
+            Privacy Policy
+          </Link>
+        </p>
       </form>
     </div>
   );

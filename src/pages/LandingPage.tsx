@@ -13,6 +13,7 @@ import heroImage from "@/assets/hero-illustration.jpg";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -40,6 +41,9 @@ const LandingPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            <Button variant="ghost">
+              <Link to="/privacy">Privacy</Link>
+            </Button>
             <Button variant="ghost" onClick={handleLogin}>
               Login
             </Button>

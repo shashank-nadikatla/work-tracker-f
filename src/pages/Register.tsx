@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, Link } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 const Register = () => {
@@ -10,15 +11,20 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setLoadingSubmit(true);
       await register(email, password);
-      navigate("/");
+      navigate("/app");
     } catch (err: any) {
       setError(err.message || "Failed to register");
+    } finally {
+      setLoadingSubmit(false);
     }
   };
 
@@ -51,8 +57,24 @@ const Register = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <Button type="submit" className="w-full">
-          Sign Up
+        <div className="flex items-center gap-3 text-sm mb-2">
+          <Switch checked={agreed} onCheckedChange={setAgreed} />
+          <span>
+            I agree to the&nbsp;
+            <Link
+              to="/privacy"
+              className="text-primary hover:underline font-medium"
+            >
+              Privacy Policy
+            </Link>
+          </span>
+        </div>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={loadingSubmit || !agreed}
+        >
+          {loadingSubmit ? "Signing up..." : "Sign Up"}
         </Button>
         <p className="text-sm text-center text-muted-foreground">
           Already have an account?{" "}
