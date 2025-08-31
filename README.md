@@ -4,27 +4,32 @@ A gamified daily-activity journal that helps software engineers log work, visual
 
 ## ✨ Key Features
 
-• **Daily Activity Log** – quick form to record what you worked on each day, with category tags (Development, Testing, Analysis, Debugging, Learning, Work Items).  
+• **Daily Activity Log** – quick form to record what you worked on, with category tags (Development, Testing, Analysis, Debugging, Learning, Other Tasks, Deployment, Monitoring).  
 • **Timeline** – filterable, scrollable list of past entries (Last 7 Days, 30 Days, etc.) with inline edit & delete.  
 • **Stats & Achievements** – automatic streak tracking, unlockable badges (First Step, Week Warrior, 14-Day Streak, 100-Day Legend, etc.).  
 • **Analytics Dashboard** – charts for weekly activity, 30-day trend and tag distribution (interactive pie chart).  
+• **AI-Powered Summaries** – generate local summaries instantly, then refine them via Perplexity Sonar with an optional custom prompt.  
+• **Privacy & Compliance** – dedicated Privacy Policy page and mandatory opt-in checkbox on registration.
 • **Sync & Auth** – Firebase Authentication (email+password) and Express + MongoDB backend (deployed on Render).  
 • **Offline-friendly** – entries cached in local storage; UI works even without network.
 
 ## 🏗️ Tech Stack
 
 Front-end
+
 - React 18 + Vite + TypeScript
 - TailwindCSS + shadcn/ui components
 - Zustand state management
 - Recharts for data-viz
 
 Back-end (separate repo)
+
 - Express router deployed as Firebase Cloud Function (or standalone on Render)
 - MongoDB Atlas
 
 CI/CD
-- GitHub Actions → Firebase Hosting (static front-end)  
+
+- GitHub Actions → Firebase Hosting (static front-end)
 - Render auto-deploy for backend
 
 ## 🚀 Local Development
@@ -43,6 +48,7 @@ npm run dev                 # http://localhost:5173
 ```
 
 `.env` keys (front-end)
+
 ```
 VITE_API_URL=http://localhost:4000       # or Render URL in prod
 VITE_FIREBASE_API_KEY=...
@@ -60,7 +66,14 @@ For backend setup see **functions/README.md** in the server repo.
 1. **Push to GitHub** – repo is the single source of truth; secrets and `node_modules` are ignored via `.gitignore`.
 2. **Firebase Hosting** – GitHub Action builds (`vite build`) and deploys on every push to `main`.
 3. **Render** – backend auto-deploys from its repo; environment variables configured in Render dashboard.
-4. **UptimeRobot** – pings `/health` endpoint to keep Render dyno awake.
+
+### Environment variables (CI secrets)
+
+Add these to your GitHub repository secrets so the build can compile and the AI summary feature works:
+
+- `VITE_AI_API_URL` – `https://api.perplexity.ai/chat/completions`
+- `VITE_AI_API_KEY` – your Perplexity API key (`pplx-…`)
+- `VITE_AI_MODEL` – `sonar-pro` (or other Sonar model)
 
 ## 🤝 Contributing
 
