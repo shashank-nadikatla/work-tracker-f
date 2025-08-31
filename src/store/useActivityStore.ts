@@ -242,8 +242,6 @@ export const useActivityStore = create<ActivityState>()(
               title: "Save failed",
               description: "Couldn't save the new activity to the server.",
               variant: "destructive",
-              className:
-                "bg-destructive/10 text-destructive-foreground border-destructive",
             })
           );
         // Recalculate streak after adding entry
@@ -272,8 +270,6 @@ export const useActivityStore = create<ActivityState>()(
                 title: "Save failed",
                 description: "Couldn't save changes to the server. Try again.",
                 variant: "destructive",
-                className:
-                  "bg-destructive/10 text-destructive-foreground border-destructive",
               })
             );
       },
@@ -296,8 +292,6 @@ export const useActivityStore = create<ActivityState>()(
               title: "Delete failed",
               description: "Couldn't delete entry on the server.",
               variant: "destructive",
-              className:
-                "bg-destructive/10 text-destructive-foreground border-destructive",
             })
           );
         get().calculateStreak();
@@ -505,8 +499,6 @@ export const useActivityStore = create<ActivityState>()(
             title: "Load failed",
             description: "Couldn't fetch activities from the server.",
             variant: "destructive",
-            className:
-              "bg-destructive/10 text-destructive-foreground border-destructive",
           });
         }
       },

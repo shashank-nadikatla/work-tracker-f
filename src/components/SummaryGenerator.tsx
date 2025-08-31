@@ -5,12 +5,14 @@ import {
   SparklesIcon,
   ClipboardDocumentIcon,
   ArrowDownTrayIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
+import { Input } from "@/components/ui/input";
 import { ActivityEntry } from "@/store/useActivityStore";
 
 interface SummaryGeneratorProps {
@@ -26,6 +28,9 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
 }) => {
   const [summary, setSummary] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [lastAiSummary, setLastAiSummary] = useState("");
   const { toast } = useToast();
 
   const generateLocalSummary = () => {
@@ -69,15 +74,13 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
     setIsGenerating(true);
 
     try {
-      // For now, use local summary generation
-      // In a real app, you could try OpenAI API first then fallback to local
       const localSummary = generateLocalSummary();
       setSummary(localSummary);
 
       toast({
         title: "Summary generated! ✨",
         description: "Your work summary is ready for review and export.",
-        className: "bg-success/10 border-success text-success-foreground",
+        className: "bg-gradient-primary text-primary-foreground border-none",
       });
     } catch (error) {
       toast({
@@ -94,13 +97,63 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
     }
   };
 
+  const handleAISummary = async () => {
+    const localText = generateLocalSummary();
+    setSummary(localText); // always display fresh local summary first
+
+    setAiLoading(true);
+    try {
+      const res = await fetch(import.meta.env.VITE_PPLX_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_PPLX_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: import.meta.env.VITE_PPLX_MODEL || "sonar-pro",
+          temperature: 0.7,
+          max_tokens: 400,
+          messages: [
+            {
+              role: "user",
+              content:
+                (prompt ||
+                  "Summarize the following developer work log in concise bullet points in simple english.") +
+                "\n\n" +
+                localText,
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) throw new Error("Perplexity request failed");
+      const data = await res.json();
+      const aiText = data.choices?.[0]?.message?.content || localText;
+      setSummary(aiText);
+      setLastAiSummary(aiText);
+      toast({
+        title: "AI summary ready! ✨",
+        description: "AI generated an enhanced summary.",
+        className: "bg-gradient-gaming text-primary-foreground border-none",
+      });
+    } catch (e) {
+      toast({
+        title: "AI summarization failed",
+        description: "Showing local summary instead.",
+        variant: "destructive",
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleCopyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(summary);
       toast({
         title: "Copied to clipboard! 📋",
         description: "Summary has been copied to your clipboard.",
-        className: "bg-accent/10 border-accent text-accent-foreground",
+        className: "bg-gradient-primary text-primary-foreground border-none",
       });
     } catch (error) {
       toast({
@@ -108,6 +161,46 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
         description: "Unable to copy to clipboard.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRetry = async () => {
+    if (!lastAiSummary) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch(import.meta.env.VITE_PPLX_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_PPLX_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: import.meta.env.VITE_PPLX_MODEL || "sonar-pro",
+          temperature: 0.7,
+          max_tokens: 400,
+          messages: [
+            {
+              role: "user",
+              content:
+                "Improve the following summary further in concise bullet points.\n\n" +
+                lastAiSummary,
+            },
+          ],
+        }),
+      });
+      if (!res.ok) throw new Error("AI Summary retry failed");
+      const data = await res.json();
+      const improved = data.choices?.[0]?.message?.content || lastAiSummary;
+      setSummary(improved);
+      setLastAiSummary(improved);
+      toast({
+        title: "AI summary improved!",
+        className: "bg-gradient-gaming text-primary-foreground",
+      });
+    } catch {
+      toast({ title: "Retry failed", variant: "destructive" });
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -168,28 +261,39 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
       {/* Generate Summary */}
       <Card className="card-gaming p-6">
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <SparklesIcon className="w-5 h-5" />
-              AI-Powered Summary
-            </h3>
-            <Button
-              onClick={handleGenerateSummary}
-              disabled={isGenerating || entries.length === 0}
-              className="gap-2 btn-gaming"
-            >
-              {isGenerating ? (
-                <>
-                  <SparklesIcon className="w-4 h-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <SparklesIcon className="w-4 h-4" />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <DocumentTextIcon className="w-5 h-5" /> Summary Tools
+              </h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateSummary}
+                  disabled={isGenerating || aiLoading || entries.length === 0}
+                >
                   Generate Summary
-                </>
-              )}
-            </Button>
+                </Button>
+                <Button
+                  className="gap-1 btn-gaming"
+                  onClick={handleAISummary}
+                  disabled={entries.length === 0 || aiLoading}
+                >
+                  {aiLoading ? (
+                    <SparklesIcon className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <SparklesIcon className="w-4 h-4" />
+                  )}
+                  AI-Powered Summary
+                </Button>
+              </div>
+            </div>
+            <Input
+              placeholder="Optional prompt for AI (e.g., 'Summarise for my stand-up')"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              disabled={aiLoading}
+            />
           </div>
 
           {summary && (
@@ -202,6 +306,15 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
               />
 
               <div className="flex gap-2 flex-wrap">
+                {lastAiSummary && !aiLoading && (
+                  <Button
+                    variant="outline"
+                    onClick={handleRetry}
+                    className="gap-1"
+                  >
+                    <ArrowPathIcon className="w-4 h-4" /> Retry
+                  </Button>
+                )}
                 <Button
                   onClick={handleCopyToClipboard}
                   variant="outline"

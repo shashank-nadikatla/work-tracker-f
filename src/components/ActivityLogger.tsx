@@ -50,10 +50,16 @@ const activityTags = [
     color: "text-yellow-500",
   },
   {
-    id: "work-items",
-    label: "Work Items",
+    id: "other-tasks",
+    label: "Other Tasks",
     icon: UsersIcon,
     color: "text-teal-500",
+  },
+  {
+    id: "monitoring",
+    label: "Monitoring",
+    icon: MagnifyingGlassIcon,
+    color: "text-sky-500",
   },
   {
     id: "deployment",
@@ -108,8 +114,7 @@ export const ActivityLogger: React.FC = () => {
       toast({
         title: "Something went wrong",
         description: "Failed to save your activity. Please try again.",
-        className:
-          "bg-destructive/10 text-destructive-foreground border-destructive",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);

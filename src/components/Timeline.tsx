@@ -66,7 +66,7 @@ export const Timeline: React.FC<TimelineProps> = ({
     "analysis",
     "debugging",
     "learning",
-    "work-items",
+    "other-tasks",
     "deployment",
   ];
   const allTags = useMemo(() => {
@@ -79,6 +79,23 @@ export const Timeline: React.FC<TimelineProps> = ({
     {
       label: "This Day",
       start: format(new Date(), "yyyy-MM-dd"),
+      end: format(new Date(), "yyyy-MM-dd"),
+    },
+    ,
+    {
+      label: "Yesterday",
+      start: format(
+        new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        "yyyy-MM-dd"
+      ),
+      end: format(new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+    },
+    {
+      label: "Last 3 Days",
+      start: format(
+        new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        "yyyy-MM-dd"
+      ),
       end: format(new Date(), "yyyy-MM-dd"),
     },
     {
@@ -118,7 +135,7 @@ export const Timeline: React.FC<TimelineProps> = ({
       analysis: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
       debugging: "bg-red-500/10 text-red-500 border-red-500/20",
       learning: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-      "work-items": "bg-teal-500/10 text-teal-500 border-teal-500/20",
+      "other-tasks": "bg-teal-500/10 text-teal-500 border-teal-500/20",
       deployment: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
     };
     return (
@@ -262,7 +279,7 @@ export const Timeline: React.FC<TimelineProps> = ({
             </div>
           </Card>
         ) : (
-          <div className="space-y-4 overflow-y-auto scrollbar-hide max-h-[520px] md:max-h-[760px] pr-1 pt-1">
+          <div className="space-y-4 overflow-y-auto scrollbar-hide max-h-[520px] md:max-h-[760px] pr-1 pt-1 pb-1">
             {filteredEntries.map((entry) => {
               const isEditing = editingId === entry.id;
               return (
