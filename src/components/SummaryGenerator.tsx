@@ -103,14 +103,14 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
 
     setAiLoading(true);
     try {
-      const res = await fetch(import.meta.env.VITE_PPLX_API_URL, {
+      const res = await fetch(import.meta.env.VITE_AI_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_PPLX_API_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_AI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: import.meta.env.VITE_PPLX_MODEL || "sonar-pro",
+          model: import.meta.env.VITE_AI_MODEL || "sonar",
           temperature: 0.7,
           max_tokens: 400,
           messages: [
@@ -168,14 +168,14 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
     if (!lastAiSummary) return;
     setAiLoading(true);
     try {
-      const res = await fetch(import.meta.env.VITE_PPLX_API_URL, {
+      const res = await fetch(import.meta.env.VITE_AI_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_PPLX_API_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_AI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: import.meta.env.VITE_PPLX_MODEL || "sonar-pro",
+          model: import.meta.env.VITE_AI_MODEL || "sonar",
           temperature: 0.7,
           max_tokens: 400,
           messages: [
