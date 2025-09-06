@@ -6,6 +6,9 @@ import {
   TrophyIcon,
   CalendarIcon,
   TagIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,6 +36,7 @@ import {
   eachDayOfInterval,
   startOfWeek,
   endOfWeek,
+  addWeeks,
 } from "date-fns";
 
 interface AnalyticsProps {
@@ -42,6 +46,37 @@ interface AnalyticsProps {
 export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
   const { entries, currentStreak, longestStreak, achievements } =
     useActivityStore();
+
+  // Week navigation: 0 = this week, -1 = previous, etc.
+  const [weekOffset, setWeekOffset] = React.useState(0);
+  const rangeStart = useMemo(
+    () => startOfWeek(addWeeks(new Date(), weekOffset)),
+    [weekOffset]
+  );
+  const rangeEnd = useMemo(
+    () => endOfWeek(addWeeks(new Date(), weekOffset)),
+    [weekOffset]
+  );
+  const isCurrentWeek = weekOffset === 0;
+  const rangeLabel = `${format(rangeStart, "dd MMM")} - ${format(
+    rangeEnd,
+    "MMM dd"
+  )}`;
+
+  // Determine if immediate previous week has any data
+  const prevRangeStart = useMemo(
+    () => startOfWeek(addWeeks(new Date(), weekOffset - 1)),
+    [weekOffset]
+  );
+  const prevRangeEnd = useMemo(
+    () => endOfWeek(addWeeks(new Date(), weekOffset - 1)),
+    [weekOffset]
+  );
+  const prevStartStr = format(prevRangeStart, "yyyy-MM-dd");
+  const prevEndStr = format(prevRangeEnd, "yyyy-MM-dd");
+  const hasPrevWeekData = entries.some(
+    (e) => e.date >= prevStartStr && e.date <= prevEndStr
+  );
 
   const analyticsData = useMemo(() => {
     // Tag distribution
@@ -74,12 +109,10 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
           color: tagColorMap[key] || defaultColor,
         };
       })
-      .sort((a, b) => (b.value - a.value) || a.name.localeCompare(b.name));
+      .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
 
-    // Weekly activity
-    const weekStart = startOfWeek(new Date());
-    const weekEnd = endOfWeek(new Date());
-    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+    // Weekly activity for selected range
+    const weekDays = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
 
     const weeklyData = weekDays.map((day) => {
       const dayStr = format(day, "yyyy-MM-dd");
@@ -131,7 +164,14 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
         totalAchievements: achievements.length,
       },
     };
-  }, [entries, currentStreak, longestStreak, achievements]);
+  }, [
+    entries,
+    currentStreak,
+    longestStreak,
+    achievements,
+    rangeStart,
+    rangeEnd,
+  ]);
 
   const StatCard = ({
     icon: Icon,
@@ -222,7 +262,45 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
         {/* Weekly Activity */}
         <Card className="card-gaming p-6 h-[360px] flex flex-col">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">This Week's Activity</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                {isCurrentWeek
+                  ? "This Week's Activity"
+                  : `${rangeLabel} Week's activity`}
+              </h3>
+              <div className="flex items-center gap-2">
+                {hasPrevWeekData && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setWeekOffset((o) => o - 1)}
+                    aria-label="Previous week"
+                  >
+                    <ChevronLeftIcon className="w-4 h-4" />
+                  </Button>
+                )}
+                {!isCurrentWeek && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setWeekOffset(0)}
+                      aria-label="Reset to this week"
+                    >
+                      <ArrowPathIcon className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setWeekOffset((o) => Math.min(o + 1, 0))}
+                      aria-label="Next week"
+                    >
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analyticsData.weeklyData}>
