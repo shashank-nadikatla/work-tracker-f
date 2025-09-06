@@ -256,13 +256,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
         </Card>
 
         {/* Tag Distribution */}
-        <Card className="card-gaming p-6 min-h-[360px] flex flex-col overflow-hidden">
+        <Card className="card-gaming p-6 ">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <TagIcon className="w-5 h-5" />
               Activity Types
             </h3>
-            <div className="h-40">
+            <div className="h-48">
               {analyticsData.tagData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -310,7 +310,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
               )}
             </div>
             {analyticsData.tagData.length > 0 && (
-              <div className="flex-1 overflow-y-auto scrollbar-hide space-y-2 pr-1">
+              <div className="space-y-2">
                 {analyticsData.tagData.map((item, index) => (
                   <div
                     key={index}

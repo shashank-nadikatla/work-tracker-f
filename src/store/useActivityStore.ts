@@ -1,11 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { format, startOfDay, differenceInDays, startOfWeek } from "date-fns";
-import {
-  upsertEntry,
-  deleteEntry as deleteEntryApi,
-  fetchEntries,
-} from "@/api/entries";
+import { format, startOfDay, differenceInDays, startOfWeek, subDays, addDays } from "date-fns";
+import { upsertEntry, deleteEntry as deleteEntryApi, fetchEntries } from "@/api/entries";
+import { fetchSkips, upsertSkip, deleteSkip } from "@/api/skips";
 import { toast } from "@/hooks/use-toast";
 
 export interface ActivityEntry {
@@ -29,6 +26,7 @@ interface ActivityState {
   achievements: Achievement[];
   currentStreak: number;
   longestStreak: number;
+  skippedDates: Record<string, { reason: string; createdAt: number }>;
 
   // Actions
   addEntry: (content: string, tags: string[], date?: Date) => void;
@@ -39,6 +37,9 @@ interface ActivityState {
   unlockAchievement: (achievementId: string) => void;
   loadEntries: () => Promise<void>;
   recalculateAchievements: () => void;
+  loadSkips: () => Promise<void>;
+  markSkip: (date: Date, reason: "holiday" | "leave") => Promise<void>;
+  unmarkSkip: (dateStr: string) => Promise<void>;
 }
 
 const defaultAchievements: Achievement[] = [
@@ -153,8 +154,9 @@ export const useActivityStore = create<ActivityState>()(
       achievements: defaultAchievements,
       currentStreak: 0,
       longestStreak: 0,
+      skippedDates: {},
 
-      addEntry: (content: string, tags: string[], date = new Date()) => {
+      addEntry: async (content: string, tags: string[], date = new Date()) => {
         const newEntry: ActivityEntry = {
           id: `entry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           date: format(startOfDay(date), "yyyy-MM-dd"),
@@ -164,17 +166,34 @@ export const useActivityStore = create<ActivityState>()(
         };
 
         set((state) => ({ ...state, entries: [...state.entries, newEntry] }));
-        // sync with backend (fire and forget)
-        upsertEntry(newEntry)
-          .then(() => console.log("Activity saved"))
-          .catch(() =>
+        try {
+          const res = await fetch((import.meta.env.VITE_API_URL || "/api") + "/entries", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${(await (await import("@/firebaseConfig")).auth.currentUser?.getIdToken()) || ""}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newEntry),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (data?.removedSkip && newEntry.date) {
+            set((state) => {
+              const { [newEntry.date]: _omit, ...rest } = state.skippedDates;
+              return { skippedDates: rest } as Partial<ActivityState>;
+            });
             toast({
-              title: "Save failed",
-              description: "Couldn't save the new activity to the server.",
-              variant: "destructive",
-              
-            })
-          );
+              title: "Streak protection removed",
+              description: "Protection for today was removed because you logged activity.",
+              className: "bg-gradient-primary text-primary-foreground border-none",
+            });
+          }
+        } catch {
+          toast({
+            title: "Save failed",
+            description: "Couldn't save the new activity to the server.",
+            variant: "destructive",
+          });
+        }
         // Update computed stats and achievements immediately
         get().calculateStreak();
         get().recalculateAchievements();
@@ -249,47 +268,56 @@ export const useActivityStore = create<ActivityState>()(
       },
 
       calculateStreak: () => {
-        const state = get();
-        const entries = state.entries;
+        const { entries, skippedDates } = get();
+        const uniqueDates = Array.from(new Set(entries.map((e) => e.date))).sort(
+          (a, b) => b.localeCompare(a)
+        );
 
-        if (entries.length === 0) {
-          set({ currentStreak: 0 });
-          return;
-        }
-
-        // Unique entry dates, most-recent first
-        const uniqueDates = Array.from(
-          new Set(entries.map((e) => e.date))
-        ).sort((a, b) => b.localeCompare(a));
-
-        // ----- current streak (today/yesterday/etc.) -----
+        // ----- current streak (like before, now with skip bridging) -----
         let currentStreak = 0;
         let lastDateStr = format(startOfDay(new Date()), "yyyy-MM-dd");
-
         for (const dateStr of uniqueDates) {
-          const diff = differenceInDays(
-            new Date(lastDateStr),
-            new Date(dateStr)
-          );
+          const diff = differenceInDays(new Date(lastDateStr), new Date(dateStr));
           if (diff === 0 || diff === 1) {
-            currentStreak++;
-            lastDateStr = dateStr; // continue chain
-          } else {
-            break;
+            currentStreak += 1;
+            lastDateStr = dateStr;
+          } else if (diff > 1) {
+            // Check that all missing days are marked skipped
+            let allSkipped = true;
+            for (let k = 1; k < diff; k++) {
+              const missing = format(subDays(new Date(lastDateStr), k), "yyyy-MM-dd");
+              if (!skippedDates[missing]) {
+                allSkipped = false;
+                break;
+              }
+            }
+            if (allSkipped) {
+              currentStreak += 1;
+              lastDateStr = dateStr;
+            } else {
+              break;
+            }
           }
         }
 
-        // ----- longest streak overall -----
-        let longestStreak = 1;
-        let tempStreak = 1;
-        for (let i = 1; i < uniqueDates.length; i++) {
-          const prev = new Date(uniqueDates[i - 1]);
-          const curr = new Date(uniqueDates[i]);
-          if (differenceInDays(prev, curr) === 1) {
-            tempStreak++;
-            longestStreak = Math.max(longestStreak, tempStreak);
-          } else {
-            tempStreak = 1;
+        // ----- longest streak overall (respect protected days) -----
+        const entryDates = new Set(entries.map((e) => e.date));
+        const allDates = [
+          ...new Set([...entries.map((e) => e.date), ...Object.keys(skippedDates || {})]),
+        ].sort((a, b) => a.localeCompare(b));
+        let longestStreak = 0;
+        if (allDates.length > 0) {
+          let streak = 0;
+          let cursor = new Date(allDates[0]);
+          const end = startOfDay(new Date());
+          while (cursor <= end) {
+            const ds = format(cursor, "yyyy-MM-dd");
+            if (entryDates.has(ds)) streak += 1;
+            else if (skippedDates[ds]) {
+              // keep
+            } else streak = 0;
+            longestStreak = Math.max(longestStreak, streak);
+            cursor = addDays(cursor, 1);
           }
         }
 
@@ -462,6 +490,7 @@ export const useActivityStore = create<ActivityState>()(
         try {
           const entries = await fetchEntries();
           set((state) => ({ ...state, entries }));
+          await get().loadSkips();
           get().calculateStreak();
           get().recalculateAchievements();
         } catch (e) {
@@ -473,14 +502,57 @@ export const useActivityStore = create<ActivityState>()(
           });
         }
       },
+
+      loadSkips: async () => {
+        try {
+          const skips = await fetchSkips();
+          const map: Record<string, { reason: string; createdAt: number }> = {};
+          for (const s of skips) map[s.date] = { reason: s.reason, createdAt: s.createdAt };
+          set({ skippedDates: map });
+        } catch (e) {
+          console.error("Failed to load skips", e);
+        }
+      },
+
+      markSkip: async (date: Date, reason: "holiday" | "leave") => {
+        const dateStr = format(startOfDay(date), "yyyy-MM-dd");
+        try {
+          await upsertSkip(dateStr, reason);
+          set((state) => ({
+            skippedDates: { ...state.skippedDates, [dateStr]: { reason, createdAt: Date.now() } },
+          }));
+          get().calculateStreak();
+          toast({
+            title: "Streak protected",
+            description: `Marked ${dateStr} as ${reason}. This day won't break your streak.`,
+            className: "bg-gradient-primary text-primary-foreground border-none",
+          });
+        } catch {
+          toast({ title: "Failed", description: "Could not set streak protection.", variant: "destructive" });
+        }
+      },
+
+      unmarkSkip: async (dateStr: string) => {
+        try {
+          await deleteSkip(dateStr);
+          set((state) => {
+            const { [dateStr]: _omit, ...rest } = state.skippedDates;
+            return { skippedDates: rest } as Partial<ActivityState>;
+          });
+          get().calculateStreak();
+          toast({ title: "Protection removed", description: `${dateStr} now counts normally.` });
+        } catch {
+          toast({ title: "Failed", description: "Could not remove protection.", variant: "destructive" });
+        }
+      },
     }),
     {
       name: "work-tracker-storage",
-      version: 3,
-      partialize: (state) => ({ entries: state.entries }),
+      version: 4,
+      partialize: (state) => ({ entries: state.entries, skippedDates: state.skippedDates }),
       migrate: (persisted: any) => {
         if (!persisted) return persisted;
-        return { entries: persisted.entries || [] };
+        return { entries: persisted.entries || [], skippedDates: persisted.skippedDates || {} };
       },
       onRehydrateStorage: () => (state, error) => {
         if (error) {

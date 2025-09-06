@@ -1,9 +1,17 @@
 import React, { useEffect } from "react";
 import { FireIcon, TrophyIcon, SparklesIcon } from "@heroicons/react/24/solid";
+import { ShieldCheckIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useActivityStore } from "@/store/useActivityStore";
 import { format, startOfDay } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export const StreakTracker: React.FC = () => {
   const {
@@ -12,6 +20,9 @@ export const StreakTracker: React.FC = () => {
     achievements,
     calculateStreak,
     entries,
+    markSkip,
+    skippedDates,
+    unmarkSkip,
   } = useActivityStore();
 
   useEffect(() => {
@@ -31,6 +42,7 @@ export const StreakTracker: React.FC = () => {
 
   const todayStr = format(startOfDay(new Date()), "yyyy-MM-dd");
   const hasEntryToday = entries.some((e) => e.date === todayStr);
+  const isTodaySkipped = Boolean(skippedDates?.[todayStr]);
 
   const getStreakMessage = () => {
     if (currentStreak === 0) return "Start your journey today! 🚀";
@@ -57,26 +69,64 @@ export const StreakTracker: React.FC = () => {
       <Card className="card-gaming p-6 animate-scale-in">
         <div className="space-y-4">
           {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <FireIcon className={`w-8 h-8 ${getStreakColor()}`} />
-              {currentStreak > 0 && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full animate-pulse"></div>
-              )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <FireIcon className={`w-8 h-8 ${getStreakColor()}`} />
+                {currentStreak > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full animate-pulse"></div>
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">
+                  Current Streak
+                </h3>
+                <p className="text-sm text-muted-foreground">Days in a row</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-foreground">
-                Current Streak
-              </h3>
-              <p className="text-sm text-muted-foreground">Days in a row</p>
-            </div>
+
+            {/* Prevent Streak (Skip Day) */}
+            {isTodaySkipped ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => unmarkSkip(todayStr)}
+              >
+                <XCircleIcon className="w-4 h-4" />
+                Remove Protection
+              </Button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <ShieldCheckIcon className="w-4 h-4" />
+                    Prevent Streak
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => markSkip(new Date(), "holiday")}>
+                    Holiday
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => markSkip(new Date(), "leave")}>
+                    Leave
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
-          {/* Reminder to log today */}
-          {!hasEntryToday && currentStreak > 0 && (
-            <p className="text-sm text-orange-500 text-center">
-              Log an activity today to keep the streak!
+          {/* Reminder / Protection note */}
+          {isTodaySkipped ? (
+            <p className="text-sm text-sky-500 text-center">
+              Streak is prevented for today: {skippedDates[todayStr]?.reason}
             </p>
+          ) : (
+            !hasEntryToday && currentStreak > 0 && (
+              <p className="text-sm text-orange-500 text-center">
+                Log an activity today to keep the streak!
+              </p>
+            )
           )}
 
           {/* Streak Counter */}

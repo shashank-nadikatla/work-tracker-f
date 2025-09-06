@@ -31,7 +31,7 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <form
-        className="w-full max-w-sm bg-card p-6 rounded-lg shadow-md space-y-4"
+        className="w-full max-w-sm card-gaming p-6 space-y-4"
         onSubmit={handleSubmit}
       >
         <button
