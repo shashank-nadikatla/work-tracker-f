@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { format, startOfDay, differenceInDays } from "date-fns";
+import { format, startOfDay, differenceInDays, startOfWeek } from "date-fns";
 import {
   upsertEntry,
   deleteEntry as deleteEntryApi,
@@ -46,7 +46,7 @@ const defaultAchievements: Achievement[] = [
     id: "first-entry",
     title: "First Step",
     description: "Logged your first activity",
-    icon: "🚀",
+    icon: "🥇",
   },
   {
     id: "week-streak",
@@ -58,7 +58,7 @@ const defaultAchievements: Achievement[] = [
     id: "month-streak",
     title: "Monthly Master",
     description: "Maintained a 30-day streak",
-    icon: "👑",
+    icon: "🗓️",
   },
   {
     id: "coding-focus",
@@ -70,7 +70,7 @@ const defaultAchievements: Achievement[] = [
     id: "testing-pro",
     title: "Bug Hunter",
     description: "Logged 10 testing activities",
-    icon: "🐛",
+    icon: "🔬",
   },
   {
     id: "productive-week",
@@ -82,43 +82,37 @@ const defaultAchievements: Achievement[] = [
     id: "diverse-learner",
     title: "Renaissance Dev",
     description: "Used all activity types",
-    icon: "🎭",
-  },
-  {
-    id: "marathon-coder",
-    title: "Marathon Coder",
-    description: "Logged 100 total activities",
-    icon: "🏃‍♂️",
+    icon: "🌐",
   },
   {
     id: "consistent-logger",
     title: "Habit Master",
     description: "Logged activity 50 days total",
-    icon: "📅",
+    icon: "📈",
   },
   {
     id: "bug-squasher",
     title: "Bug Squasher",
     description: "25 debugging activities",
-    icon: "🐞",
+    icon: "🛠️",
   },
   {
     id: "analyst",
     title: "Insight Seeker",
     description: "25 analysis activities",
-    icon: "🔎",
+    icon: "🔍",
   },
   {
     id: "early-bird",
     title: "Early Bird",
     description: "Logged before 08:00 AM 10 times",
-    icon: "☀️",
+    icon: "🌅",
   },
   {
     id: "night-owl",
     title: "Night Owl",
     description: "Logged after 10:00 PM 10 times",
-    icon: "🌙",
+    icon: "🦉",
   },
   {
     id: "starter-10",
@@ -169,71 +163,7 @@ export const useActivityStore = create<ActivityState>()(
           timestamp: Date.now(),
         };
 
-        set((state) => {
-          const updatedEntries = [...state.entries, newEntry];
-          const newState = { ...state, entries: updatedEntries };
-
-          // Check for achievements
-          if (state.entries.length === 0) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "first-entry" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-
-          // Tag-based achievements
-          const debugCount = updatedEntries.filter((e) =>
-            e.tags.includes("debugging")
-          ).length;
-          if (
-            debugCount >= 25 &&
-            !state.achievements.find((a) => a.id === "bug-squasher")?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "bug-squasher" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-          const analysisCount = updatedEntries.filter((e) =>
-            e.tags.includes("analysis")
-          ).length;
-          if (
-            analysisCount >= 25 &&
-            !state.achievements.find((a) => a.id === "analyst")?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "analyst" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-          // time-of-day achievements
-          const entryHour = new Date(newEntry.timestamp).getHours();
-          if (entryHour < 8) {
-            const earlyCount = updatedEntries.filter(
-              (e) => new Date(e.timestamp).getHours() < 8
-            ).length;
-            if (
-              earlyCount >= 10 &&
-              !state.achievements.find((a) => a.id === "early-bird")?.unlockedAt
-            ) {
-              newState.achievements = state.achievements.map((a) =>
-                a.id === "early-bird" ? { ...a, unlockedAt: Date.now() } : a
-              );
-            }
-          }
-          if (entryHour >= 22) {
-            const nightCount = updatedEntries.filter(
-              (e) => new Date(e.timestamp).getHours() >= 22
-            ).length;
-            if (
-              nightCount >= 10 &&
-              !state.achievements.find((a) => a.id === "night-owl")?.unlockedAt
-            ) {
-              newState.achievements = state.achievements.map((a) =>
-                a.id === "night-owl" ? { ...a, unlockedAt: Date.now() } : a
-              );
-            }
-          }
-
-          return newState;
-        });
+        set((state) => ({ ...state, entries: [...state.entries, newEntry] }));
         // sync with backend (fire and forget)
         upsertEntry(newEntry)
           .then(() => console.log("Activity saved"))
@@ -242,10 +172,12 @@ export const useActivityStore = create<ActivityState>()(
               title: "Save failed",
               description: "Couldn't save the new activity to the server.",
               variant: "destructive",
+              
             })
           );
-        // Recalculate streak after adding entry
+        // Update computed stats and achievements immediately
         get().calculateStreak();
+        get().recalculateAchievements();
       },
 
       updateEntry: (id: string, updates: Partial<ActivityEntry>) => {
@@ -270,8 +202,12 @@ export const useActivityStore = create<ActivityState>()(
                 title: "Save failed",
                 description: "Couldn't save changes to the server. Try again.",
                 variant: "destructive",
+                
               })
             );
+        // Update computed stats and achievements immediately
+        get().calculateStreak();
+        get().recalculateAchievements();
       },
 
       deleteEntry: (id: string) => {
@@ -292,9 +228,12 @@ export const useActivityStore = create<ActivityState>()(
               title: "Delete failed",
               description: "Couldn't delete entry on the server.",
               variant: "destructive",
+             
             })
           );
+        // Update computed stats and achievements immediately
         get().calculateStreak();
+        get().recalculateAchievements();
       },
 
       getEntriesByDateRange: (startDate: Date, endDate: Date) => {
@@ -354,73 +293,7 @@ export const useActivityStore = create<ActivityState>()(
           }
         }
 
-        set((state) => {
-          const newState = { ...state, currentStreak, longestStreak };
-
-          // Check streak achievements
-          if (
-            currentStreak >= 7 &&
-            !state.achievements.find((a) => a.id === "week-streak")?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "week-streak" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-
-          if (
-            currentStreak >= 30 &&
-            !state.achievements.find((a) => a.id === "month-streak")?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "month-streak" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-
-          if (
-            entries.length >= 10 &&
-            !state.achievements.find((a) => a.id === "starter-10")?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "starter-10" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-          if (
-            entries.length >= 50 &&
-            !state.achievements.find((a) => a.id === "prolific-50")?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "prolific-50" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-          if (
-            entries.length >= 100 &&
-            !state.achievements.find((a) => a.id === "century-100")?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "century-100" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-          if (
-            currentStreak >= 14 &&
-            !state.achievements.find((a) => a.id === "two-week-streak")
-              ?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "two-week-streak" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-          if (
-            currentStreak >= 100 &&
-            !state.achievements.find((a) => a.id === "hundred-streak")
-              ?.unlockedAt
-          ) {
-            newState.achievements = state.achievements.map((a) =>
-              a.id === "hundred-streak" ? { ...a, unlockedAt: Date.now() } : a
-            );
-          }
-
-          return newState;
-        });
+        set({ currentStreak, longestStreak });
       },
 
       unlockAchievement: (achievementId: string) => {
@@ -436,52 +309,150 @@ export const useActivityStore = create<ActivityState>()(
       recalculateAchievements: () => {
         const state = get();
         const { entries } = state;
-        let updated = [...state.achievements];
 
-        const unlock = (id: string) => {
-          updated = updated.map((a) =>
-            a.id === id && !a.unlockedAt ? { ...a, unlockedAt: Date.now() } : a
-          );
-        };
+        // Sort entries ascending by timestamp for historical computation
+        const sorted = [...entries].sort((a, b) => a.timestamp - b.timestamp);
+        const unlockedAtById = new Map<string, number>();
 
-        if (entries.length > 0) unlock("first-entry");
+        if (sorted.length > 0) {
+          // first-entry: timestamp of first ever entry
+          unlockedAtById.set("first-entry", sorted[0].timestamp);
+        }
 
-        const debugCount = entries.filter((e) =>
-          e.tags.includes("debugging")
-        ).length;
-        if (debugCount >= 25) unlock("bug-squasher");
+        // Cumulative counters and helpers
+        let totalCount = 0;
+        let devCount = 0;
+        let testingCount = 0;
+        let debuggingCount = 0;
+        let analysisCount = 0;
+        let earlyCount = 0;
+        let nightCount = 0;
 
-        const analysisCount = entries.filter((e) =>
-          e.tags.includes("analysis")
-        ).length;
-        if (analysisCount >= 25) unlock("analyst");
+        const requiredTags = [
+          "dev",
+          "testing",
+          "analysis",
+          "debugging",
+          "learning",
+          "work-items",
+          "deployment",
+        ];
+        const seenTags = new Set<string>();
 
-        const earlyCount = entries.filter(
-          (e) => new Date(e.timestamp).getHours() < 8
-        ).length;
-        if (earlyCount >= 10) unlock("early-bird");
+        // For consistent-logger (unique days)
+        const seenDays = new Set<string>();
 
-        const nightCount = entries.filter(
-          (e) => new Date(e.timestamp).getHours() >= 22
-        ).length;
-        if (nightCount >= 10) unlock("night-owl");
+        // For productive-week (20+ in a week)
+        const weekBuckets = new Map<string, { count: number; timestamps: number[] }>();
 
-        if (entries.length >= 10) unlock("starter-10");
-        if (entries.length >= 50) unlock("prolific-50");
-        if (entries.length >= 100) unlock("century-100");
+        // Walk through entries in chronological order
+        for (const entry of sorted) {
+          totalCount += 1;
 
-        const streakInfo = get();
-        if (streakInfo.currentStreak >= 14) unlock("two-week-streak");
-        if (streakInfo.currentStreak >= 100) unlock("hundred-streak");
+          // total milestones
+          if (totalCount === 10) unlockedAtById.set("starter-10", entry.timestamp);
+          if (totalCount === 50) unlockedAtById.set("prolific-50", entry.timestamp);
+          if (totalCount === 100) unlockedAtById.set("century-100", entry.timestamp);
 
-        // Rebuild list from default definitions so any icon/text updates propagate,
-        // while preserving unlockedAt status from current state.
-        const unlockedMap = new Map<string, number | undefined>(
-          updated.map((a) => [a.id, a.unlockedAt])
+          // per-tag counters
+          if (entry.tags.includes("dev")) {
+            devCount += 1;
+            if (devCount === 10) unlockedAtById.set("coding-focus", entry.timestamp);
+          }
+          if (entry.tags.includes("testing")) {
+            testingCount += 1;
+            if (testingCount === 10) unlockedAtById.set("testing-pro", entry.timestamp);
+          }
+          if (entry.tags.includes("debugging")) {
+            debuggingCount += 1;
+            if (debuggingCount === 25) unlockedAtById.set("bug-squasher", entry.timestamp);
+          }
+          if (entry.tags.includes("analysis")) {
+            analysisCount += 1;
+            if (analysisCount === 25) unlockedAtById.set("analyst", entry.timestamp);
+          }
+
+          // time-of-day
+          const hour = new Date(entry.timestamp).getHours();
+          if (hour < 8) {
+            earlyCount += 1;
+            if (earlyCount === 10) unlockedAtById.set("early-bird", entry.timestamp);
+          }
+          if (hour >= 22) {
+            nightCount += 1;
+            if (nightCount === 10) unlockedAtById.set("night-owl", entry.timestamp);
+          }
+
+          // diverse-learner: accumulate required tags
+          for (const tag of entry.tags) {
+            if (requiredTags.includes(tag)) {
+              seenTags.add(tag);
+            }
+          }
+          if (
+            requiredTags.every((t) => seenTags.has(t)) &&
+            !unlockedAtById.has("diverse-learner")
+          ) {
+            unlockedAtById.set("diverse-learner", entry.timestamp);
+          }
+
+          // unique days for consistent-logger
+          if (!seenDays.has(entry.date)) {
+            seenDays.add(entry.date);
+            if (seenDays.size === 50) {
+              unlockedAtById.set("consistent-logger", entry.timestamp);
+            }
+          }
+
+          // productive-week: bucket by startOfWeek
+          const weekKey = format(startOfWeek(new Date(entry.date)), "yyyy-MM-dd");
+          const bucket = weekBuckets.get(weekKey) || { count: 0, timestamps: [] };
+          bucket.count += 1;
+          bucket.timestamps.push(entry.timestamp);
+          weekBuckets.set(weekKey, bucket);
+        }
+
+        // find earliest week reaching 20 entries
+        for (const [, bucket] of weekBuckets) {
+          if (bucket.count >= 20) {
+            // use timestamp of the 20th entry in that week
+            const sortedTs = bucket.timestamps.sort((a, b) => a - b);
+            unlockedAtById.set("productive-week", sortedTs[19]);
+            break;
+          }
+        }
+
+        // Streak-based achievements: use current streak chain to compute historical timestamp
+        const entriesByDateDesc = Array.from(new Set(sorted.map((e) => e.date))).sort(
+          (a, b) => b.localeCompare(a)
         );
-        updated = defaultAchievements.map((def) => ({
+        let chain: string[] = [];
+        let lastDateStr = format(startOfDay(new Date()), "yyyy-MM-dd");
+        for (const dateStr of entriesByDateDesc) {
+          const diff = differenceInDays(new Date(lastDateStr), new Date(dateStr));
+          if (diff === 0 || diff === 1) {
+            chain.push(dateStr);
+            lastDateStr = dateStr;
+          } else {
+            break;
+          }
+        }
+        const setUnlockAtForStreak = (id: string, threshold: number) => {
+          if (chain.length >= threshold) {
+            const thresholdDate = chain[threshold - 1]; // the day when threshold was first reached
+            const ts = sorted.find((e) => e.date === thresholdDate)?.timestamp;
+            if (ts) unlockedAtById.set(id, ts);
+          }
+        };
+        setUnlockAtForStreak("week-streak", 7);
+        setUnlockAtForStreak("two-week-streak", 14);
+        setUnlockAtForStreak("month-streak", 30);
+        setUnlockAtForStreak("hundred-streak", 100);
+
+        // Build final list from defaults using computed unlockedAt
+        const updated = defaultAchievements.map((def) => ({
           ...def,
-          unlockedAt: unlockedMap.get(def.id),
+          unlockedAt: unlockedAtById.get(def.id),
         }));
 
         set({ achievements: updated });
@@ -504,21 +475,24 @@ export const useActivityStore = create<ActivityState>()(
       },
     }),
     {
-      name: "dev-diary-quest-storage",
-      version: 2,
-      migrate: (persisted: any, version: number) => {
-        // when upgrading from v1 -> v2 ensure new achievements exist
-        if (version === 1 && persisted) {
-          const existingIds = new Set(
-            persisted.achievements?.map((a: any) => a.id) || []
-          );
-          const merged = [
-            ...(persisted.achievements || []),
-            ...defaultAchievements.filter((a) => !existingIds.has(a.id)),
-          ];
-          return { ...persisted, achievements: merged };
+      name: "work-tracker-storage",
+      version: 3,
+      partialize: (state) => ({ entries: state.entries }),
+      migrate: (persisted: any) => {
+        if (!persisted) return persisted;
+        return { entries: persisted.entries || [] };
+      },
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error("Failed to rehydrate activity store", error);
+          return;
         }
-        return persisted;
+        try {
+          state?.calculateStreak();
+          state?.recalculateAchievements();
+        } catch (e) {
+          console.error("Post-hydration recompute failed", e);
+        }
       },
     }
   )

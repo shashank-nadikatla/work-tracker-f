@@ -52,18 +52,29 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
       });
     });
 
-    const tagData = Object.entries(tagCounts).map(([tag, count], index) => ({
-      name: tag,
-      value: count,
-      color: [
-        "hsl(25, 95%, 55%)", // orange
-        "hsl(145, 80%, 50%)", // green
-        "hsl(210, 100%, 60%)", // blue
-        "hsl(280, 100%, 70%)", // purple
-        "hsl(45, 100%, 60%)", // yellow
-        "hsl(0, 80%, 60%)", // red
-      ][index % 6],
-    }));
+    // Fixed color mapping per tag
+    const tagColorMap: Record<string, string> = {
+      dev: "hsl(25, 95%, 55%)", // orange
+      testing: "hsl(210, 100%, 60%)", // blue
+      analysis: "hsl(45, 100%, 60%)", // yellow
+      debugging: "hsl(0, 80%, 60%)", // red
+      monitoring: "hsl(280, 100%, 70%)", // purple
+      deployment: "hsl(145, 80%, 50%)", // green
+      "other-tasks": "hsl(330, 80%, 65%)", // pink
+    };
+
+    const defaultColor = "hsl(200, 10%, 60%)"; // fallback gray-blue
+
+    const tagData = Object.entries(tagCounts)
+      .map(([tag, count]) => {
+        const key = tag.toLowerCase();
+        return {
+          name: tag,
+          value: count,
+          color: tagColorMap[key] || defaultColor,
+        };
+      })
+      .sort((a, b) => (b.value - a.value) || a.name.localeCompare(b.name));
 
     // Weekly activity
     const weekStart = startOfWeek(new Date());
@@ -209,7 +220,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Weekly Activity */}
-        <Card className="card-gaming p-6">
+        <Card className="card-gaming p-6 h-[360px] flex flex-col">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">This Week's Activity</h3>
             <div className="h-64">
@@ -245,13 +256,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
         </Card>
 
         {/* Tag Distribution */}
-        <Card className="card-gaming p-6">
+        <Card className="card-gaming p-6 min-h-[360px] flex flex-col overflow-hidden">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <TagIcon className="w-5 h-5" />
               Activity Types
             </h3>
-            <div className="h-64">
+            <div className="h-40">
               {analyticsData.tagData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -299,7 +310,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
               )}
             </div>
             {analyticsData.tagData.length > 0 && (
-              <div className="space-y-2">
+              <div className="flex-1 overflow-y-auto scrollbar-hide space-y-2 pr-1">
                 {analyticsData.tagData.map((item, index) => (
                   <div
                     key={index}

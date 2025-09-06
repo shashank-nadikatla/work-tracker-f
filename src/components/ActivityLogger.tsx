@@ -44,18 +44,6 @@ const activityTags = [
     color: "text-red-500",
   },
   {
-    id: "learning",
-    label: "Learning",
-    icon: BookOpenIcon,
-    color: "text-yellow-500",
-  },
-  {
-    id: "other-tasks",
-    label: "Other Tasks",
-    icon: UsersIcon,
-    color: "text-teal-500",
-  },
-  {
     id: "monitoring",
     label: "Monitoring",
     icon: MagnifyingGlassIcon,
@@ -66,6 +54,18 @@ const activityTags = [
     label: "Deployment",
     icon: RocketLaunchIcon,
     color: "text-cyan-500",
+  },
+  {
+    id: "learning",
+    label: "Learning",
+    icon: BookOpenIcon,
+    color: "text-yellow-500",
+  },
+  {
+    id: "other-tasks",
+    label: "Other Tasks",
+    icon: UsersIcon,
+    color: "text-teal-500",
   },
 ];
 

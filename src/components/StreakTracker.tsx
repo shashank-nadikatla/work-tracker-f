@@ -134,7 +134,7 @@ export const StreakTracker: React.FC = () => {
               Recent Achievements
             </p>
             {unlockedAchievements.length > 0 ? (
-              <div className="space-y-2 max-h-32 overflow-y-auto">
+              <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
                 {unlockedAchievements
                   .sort((a, b) => (b.unlockedAt || 0) - (a.unlockedAt || 0))
                   .slice(0, 3)

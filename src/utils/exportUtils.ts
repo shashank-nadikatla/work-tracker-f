@@ -110,7 +110,7 @@ export const exportToPDF = (summary: string, entries?: ActivityEntry[]) => {
   }
   
   // Save the PDF
-  const filename = `dev-diary-summary-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  const filename = `work-tracker-summary-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
   pdf.save(filename);
 };
 
@@ -137,7 +137,7 @@ export const exportToMarkdown = (summary: string, entries?: ActivityEntry[]) => 
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `dev-diary-summary-${format(new Date(), 'yyyy-MM-dd')}.md`;
+  link.download = `work-tracker-summary-${format(new Date(), 'yyyy-MM-dd')}.md`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -158,7 +158,7 @@ export const exportToJSON = (entries: ActivityEntry[]) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `dev-diary-data-${format(new Date(), 'yyyy-MM-dd')}.json`;
+  link.download = `work-tracker-data-${format(new Date(), 'yyyy-MM-dd')}.json`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
