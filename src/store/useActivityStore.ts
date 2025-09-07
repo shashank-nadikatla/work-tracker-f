@@ -1,7 +1,18 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { format, startOfDay, differenceInDays, startOfWeek, subDays, addDays } from "date-fns";
-import { upsertEntry, deleteEntry as deleteEntryApi, fetchEntries } from "@/api/entries";
+import {
+  format,
+  startOfDay,
+  differenceInDays,
+  startOfWeek,
+  subDays,
+  addDays,
+} from "date-fns";
+import {
+  upsertEntry,
+  deleteEntry as deleteEntryApi,
+  fetchEntries,
+} from "@/api/entries";
 import { fetchSkips, upsertSkip, deleteSkip } from "@/api/skips";
 import { toast } from "@/hooks/use-toast";
 
@@ -167,14 +178,21 @@ export const useActivityStore = create<ActivityState>()(
 
         set((state) => ({ ...state, entries: [...state.entries, newEntry] }));
         try {
-          const res = await fetch((import.meta.env.VITE_API_URL || "/api") + "/entries", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${(await (await import("@/firebaseConfig")).auth.currentUser?.getIdToken()) || ""}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(newEntry),
-          });
+          const res = await fetch(
+            (import.meta.env.VITE_API_URL || "/api") + "/entries",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${
+                  (await (
+                    await import("@/firebaseConfig")
+                  ).auth.currentUser?.getIdToken()) || ""
+                }`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(newEntry),
+            }
+          );
           const data = await res.json().catch(() => ({}));
           if (data?.removedSkip && newEntry.date) {
             set((state) => {
@@ -183,8 +201,10 @@ export const useActivityStore = create<ActivityState>()(
             });
             toast({
               title: "Streak protection removed",
-              description: "Protection for today was removed because you logged activity.",
-              className: "bg-gradient-primary text-primary-foreground border-none",
+              description:
+                "Protection for today was removed because you logged activity.",
+              className:
+                "bg-gradient-primary text-primary-foreground border-none",
             });
           }
         } catch {
@@ -221,7 +241,6 @@ export const useActivityStore = create<ActivityState>()(
                 title: "Save failed",
                 description: "Couldn't save changes to the server. Try again.",
                 variant: "destructive",
-                
               })
             );
         // Update computed stats and achievements immediately
@@ -247,7 +266,6 @@ export const useActivityStore = create<ActivityState>()(
               title: "Delete failed",
               description: "Couldn't delete entry on the server.",
               variant: "destructive",
-             
             })
           );
         // Update computed stats and achievements immediately
@@ -269,15 +287,18 @@ export const useActivityStore = create<ActivityState>()(
 
       calculateStreak: () => {
         const { entries, skippedDates } = get();
-        const uniqueDates = Array.from(new Set(entries.map((e) => e.date))).sort(
-          (a, b) => b.localeCompare(a)
-        );
+        const uniqueDates = Array.from(
+          new Set(entries.map((e) => e.date))
+        ).sort((a, b) => b.localeCompare(a));
 
         // ----- current streak (like before, now with skip bridging) -----
         let currentStreak = 0;
         let lastDateStr = format(startOfDay(new Date()), "yyyy-MM-dd");
         for (const dateStr of uniqueDates) {
-          const diff = differenceInDays(new Date(lastDateStr), new Date(dateStr));
+          const diff = differenceInDays(
+            new Date(lastDateStr),
+            new Date(dateStr)
+          );
           if (diff === 0 || diff === 1) {
             currentStreak += 1;
             lastDateStr = dateStr;
@@ -285,7 +306,10 @@ export const useActivityStore = create<ActivityState>()(
             // Check that all missing days are marked skipped
             let allSkipped = true;
             for (let k = 1; k < diff; k++) {
-              const missing = format(subDays(new Date(lastDateStr), k), "yyyy-MM-dd");
+              const missing = format(
+                subDays(new Date(lastDateStr), k),
+                "yyyy-MM-dd"
+              );
               if (!skippedDates[missing]) {
                 allSkipped = false;
                 break;
@@ -303,7 +327,10 @@ export const useActivityStore = create<ActivityState>()(
         // ----- longest streak overall (respect protected days) -----
         const entryDates = new Set(entries.map((e) => e.date));
         const allDates = [
-          ...new Set([...entries.map((e) => e.date), ...Object.keys(skippedDates || {})]),
+          ...new Set([
+            ...entries.map((e) => e.date),
+            ...Object.keys(skippedDates || {}),
+          ]),
         ].sort((a, b) => a.localeCompare(b));
         let longestStreak = 0;
         if (allDates.length > 0) {
@@ -371,44 +398,56 @@ export const useActivityStore = create<ActivityState>()(
         const seenDays = new Set<string>();
 
         // For productive-week (20+ in a week)
-        const weekBuckets = new Map<string, { count: number; timestamps: number[] }>();
+        const weekBuckets = new Map<
+          string,
+          { count: number; timestamps: number[] }
+        >();
 
         // Walk through entries in chronological order
         for (const entry of sorted) {
           totalCount += 1;
 
           // total milestones
-          if (totalCount === 10) unlockedAtById.set("starter-10", entry.timestamp);
-          if (totalCount === 50) unlockedAtById.set("prolific-50", entry.timestamp);
-          if (totalCount === 100) unlockedAtById.set("century-100", entry.timestamp);
+          if (totalCount === 10)
+            unlockedAtById.set("starter-10", entry.timestamp);
+          if (totalCount === 50)
+            unlockedAtById.set("prolific-50", entry.timestamp);
+          if (totalCount === 100)
+            unlockedAtById.set("century-100", entry.timestamp);
 
           // per-tag counters
           if (entry.tags.includes("dev")) {
             devCount += 1;
-            if (devCount === 10) unlockedAtById.set("coding-focus", entry.timestamp);
+            if (devCount === 10)
+              unlockedAtById.set("coding-focus", entry.timestamp);
           }
           if (entry.tags.includes("testing")) {
             testingCount += 1;
-            if (testingCount === 10) unlockedAtById.set("testing-pro", entry.timestamp);
+            if (testingCount === 10)
+              unlockedAtById.set("testing-pro", entry.timestamp);
           }
           if (entry.tags.includes("debugging")) {
             debuggingCount += 1;
-            if (debuggingCount === 25) unlockedAtById.set("bug-squasher", entry.timestamp);
+            if (debuggingCount === 25)
+              unlockedAtById.set("bug-squasher", entry.timestamp);
           }
           if (entry.tags.includes("analysis")) {
             analysisCount += 1;
-            if (analysisCount === 25) unlockedAtById.set("analyst", entry.timestamp);
+            if (analysisCount === 25)
+              unlockedAtById.set("analyst", entry.timestamp);
           }
 
           // time-of-day
           const hour = new Date(entry.timestamp).getHours();
           if (hour < 8) {
             earlyCount += 1;
-            if (earlyCount === 10) unlockedAtById.set("early-bird", entry.timestamp);
+            if (earlyCount === 10)
+              unlockedAtById.set("early-bird", entry.timestamp);
           }
           if (hour >= 22) {
             nightCount += 1;
-            if (nightCount === 10) unlockedAtById.set("night-owl", entry.timestamp);
+            if (nightCount === 10)
+              unlockedAtById.set("night-owl", entry.timestamp);
           }
 
           // diverse-learner: accumulate required tags
@@ -433,8 +472,14 @@ export const useActivityStore = create<ActivityState>()(
           }
 
           // productive-week: bucket by startOfWeek
-          const weekKey = format(startOfWeek(new Date(entry.date)), "yyyy-MM-dd");
-          const bucket = weekBuckets.get(weekKey) || { count: 0, timestamps: [] };
+          const weekKey = format(
+            startOfWeek(new Date(entry.date)),
+            "yyyy-MM-dd"
+          );
+          const bucket = weekBuckets.get(weekKey) || {
+            count: 0,
+            timestamps: [],
+          };
           bucket.count += 1;
           bucket.timestamps.push(entry.timestamp);
           weekBuckets.set(weekKey, bucket);
@@ -451,13 +496,16 @@ export const useActivityStore = create<ActivityState>()(
         }
 
         // Streak-based achievements: use current streak chain to compute historical timestamp
-        const entriesByDateDesc = Array.from(new Set(sorted.map((e) => e.date))).sort(
-          (a, b) => b.localeCompare(a)
-        );
+        const entriesByDateDesc = Array.from(
+          new Set(sorted.map((e) => e.date))
+        ).sort((a, b) => b.localeCompare(a));
         let chain: string[] = [];
         let lastDateStr = format(startOfDay(new Date()), "yyyy-MM-dd");
         for (const dateStr of entriesByDateDesc) {
-          const diff = differenceInDays(new Date(lastDateStr), new Date(dateStr));
+          const diff = differenceInDays(
+            new Date(lastDateStr),
+            new Date(dateStr)
+          );
           if (diff === 0 || diff === 1) {
             chain.push(dateStr);
             lastDateStr = dateStr;
@@ -507,7 +555,8 @@ export const useActivityStore = create<ActivityState>()(
         try {
           const skips = await fetchSkips();
           const map: Record<string, { reason: string; createdAt: number }> = {};
-          for (const s of skips) map[s.date] = { reason: s.reason, createdAt: s.createdAt };
+          for (const s of skips)
+            map[s.date] = { reason: s.reason, createdAt: s.createdAt };
           set({ skippedDates: map });
         } catch (e) {
           console.error("Failed to load skips", e);
@@ -519,16 +568,24 @@ export const useActivityStore = create<ActivityState>()(
         try {
           await upsertSkip(dateStr, reason);
           set((state) => ({
-            skippedDates: { ...state.skippedDates, [dateStr]: { reason, createdAt: Date.now() } },
+            skippedDates: {
+              ...state.skippedDates,
+              [dateStr]: { reason, createdAt: Date.now() },
+            },
           }));
           get().calculateStreak();
           toast({
             title: "Streak protected",
             description: `Marked ${dateStr} as ${reason}. This day won't break your streak.`,
-            className: "bg-gradient-primary text-primary-foreground border-none",
+            className:
+              "bg-gradient-primary text-primary-foreground border-none",
           });
         } catch {
-          toast({ title: "Failed", description: "Could not set streak protection.", variant: "destructive" });
+          toast({
+            title: "Failed",
+            description: "Could not set streak protection.",
+            variant: "destructive",
+          });
         }
       },
 
@@ -540,19 +597,34 @@ export const useActivityStore = create<ActivityState>()(
             return { skippedDates: rest } as Partial<ActivityState>;
           });
           get().calculateStreak();
-          toast({ title: "Protection removed", description: `${dateStr} now counts normally.` });
+          toast({
+            title: "Protection removed",
+            description: `${dateStr} now counts normally.`,
+            className:
+              "bg-gradient-primary text-primary-foreground border-none",
+          });
         } catch {
-          toast({ title: "Failed", description: "Could not remove protection.", variant: "destructive" });
+          toast({
+            title: "Failed",
+            description: "Could not remove protection.",
+            variant: "destructive",
+          });
         }
       },
     }),
     {
       name: "work-tracker-storage",
       version: 4,
-      partialize: (state) => ({ entries: state.entries, skippedDates: state.skippedDates }),
+      partialize: (state) => ({
+        entries: state.entries,
+        skippedDates: state.skippedDates,
+      }),
       migrate: (persisted: any) => {
         if (!persisted) return persisted;
-        return { entries: persisted.entries || [], skippedDates: persisted.skippedDates || {} };
+        return {
+          entries: persisted.entries || [],
+          skippedDates: persisted.skippedDates || {},
+        };
       },
       onRehydrateStorage: () => (state, error) => {
         if (error) {

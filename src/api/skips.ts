@@ -42,5 +42,3 @@ export async function deleteSkip(date: string): Promise<void> {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
-
-

@@ -44,6 +44,8 @@ export const StreakTracker: React.FC = () => {
   const hasEntryToday = entries.some((e) => e.date === todayStr);
   const isTodaySkipped = Boolean(skippedDates?.[todayStr]);
 
+  const [isSkipSubmitting, setIsSkipSubmitting] = React.useState(false);
+
   const getStreakMessage = () => {
     if (currentStreak === 0) return "Start your journey today! 🚀";
     if (currentStreak === 1) return "Great start! Keep it going! 💪";
@@ -85,44 +87,79 @@ export const StreakTracker: React.FC = () => {
               </div>
             </div>
 
-            {/* Prevent Streak (Skip Day) */}
-            {isTodaySkipped ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => unmarkSkip(todayStr)}
-              >
-                <XCircleIcon className="w-4 h-4" />
-                Remove Protection
-              </Button>
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <ShieldCheckIcon className="w-4 h-4" />
-                    Prevent Streak
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => markSkip(new Date(), "holiday")}>
-                    Holiday
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => markSkip(new Date(), "leave")}>
-                    Leave
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {/* Prevent Streak (Skip Day) - only when no activity today */}
+            {!hasEntryToday &&
+              (isTodaySkipped ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={isSkipSubmitting}
+                  onClick={async () => {
+                    try {
+                      setIsSkipSubmitting(true);
+                      await unmarkSkip(todayStr);
+                    } finally {
+                      setIsSkipSubmitting(false);
+                    }
+                  }}
+                >
+                  <XCircleIcon className="w-4 h-4" />
+                  {isSkipSubmitting ? "Removing..." : "Remove Protection"}
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      disabled={isSkipSubmitting}
+                    >
+                      <ShieldCheckIcon className="w-4 h-4" />
+                      {isSkipSubmitting ? "Applying..." : "Prevent Streak"}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      disabled={isSkipSubmitting}
+                      onSelect={async () => {
+                        try {
+                          setIsSkipSubmitting(true);
+                          await markSkip(new Date(), "holiday");
+                        } finally {
+                          setIsSkipSubmitting(false);
+                        }
+                      }}
+                    >
+                      Holiday
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={isSkipSubmitting}
+                      onSelect={async () => {
+                        try {
+                          setIsSkipSubmitting(true);
+                          await markSkip(new Date(), "leave");
+                        } finally {
+                          setIsSkipSubmitting(false);
+                        }
+                      }}
+                    >
+                      Leave
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ))}
           </div>
 
           {/* Reminder / Protection note */}
           {isTodaySkipped ? (
             <p className="text-sm text-sky-500 text-center">
-              Streak is prevented for today: {skippedDates[todayStr]?.reason}
+              Streak paused today due to a {skippedDates[todayStr]?.reason}
             </p>
           ) : (
-            !hasEntryToday && currentStreak > 0 && (
+            !hasEntryToday &&
+            currentStreak > 0 && (
               <p className="text-sm text-orange-500 text-center">
                 Log an activity today to keep the streak!
               </p>
