@@ -213,7 +213,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="stack-responsive animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="outline" size="sm" onClick={onBack} className="gap-2">
@@ -258,7 +258,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 grid-responsive">
         {/* Weekly Activity */}
         <Card className="card-gaming p-6 h-[360px] flex flex-col">
           <div className="space-y-4">
@@ -269,17 +269,20 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
                   : `${rangeLabel} Week's activity`}
               </h3>
               <div className="flex items-center gap-2">
-                {hasPrevWeekData && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setWeekOffset((o) => o - 1)}
-                    aria-label="Previous week"
-                  >
-                    <ChevronLeftIcon className="w-4 h-4" />
-                  </Button>
-                )}
-                {!isCurrentWeek && (
+                {isCurrentWeek ? (
+                  <>
+                    {hasPrevWeekData && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setWeekOffset((o) => o - 1)}
+                        aria-label="Previous week"
+                      >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </>
+                ) : (
                   <>
                     <Button
                       variant="outline"
@@ -289,6 +292,16 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
                     >
                       <ArrowPathIcon className="w-4 h-4" />
                     </Button>
+                    {hasPrevWeekData && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setWeekOffset((o) => o - 1)}
+                        aria-label="Previous week"
+                      >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="icon"

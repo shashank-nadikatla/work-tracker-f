@@ -66,7 +66,7 @@ export const StreakTracker: React.FC = () => {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid grid-responsive md:grid-cols-2">
       {/* Main Streak Card */}
       <Card className="card-gaming p-6 animate-scale-in">
         <div className="space-y-4">

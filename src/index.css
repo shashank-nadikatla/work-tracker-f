@@ -202,6 +202,14 @@ All colors MUST be HSL.
   .bg-gradient-success {
     background: var(--gradient-success);
   }
+
+  /* Consistent responsive spacing helpers */
+  .stack-responsive {
+    @apply space-y-4 sm:space-y-5 md:space-y-6;
+  }
+  .grid-responsive {
+    @apply gap-4 sm:gap-5 md:gap-6;
+  }
 }
 
 /* Gaming animations */

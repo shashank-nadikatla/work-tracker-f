@@ -78,7 +78,7 @@ export const SummaryGenerator: React.FC<SummaryGeneratorProps> = ({
       setSummary(localSummary);
 
       toast({
-        title: "Summary generated! ✨",
+        title: "Summary generated!",
         description: "Your work summary is ready for review and export.",
         className: "bg-gradient-primary text-primary-foreground border-none",
       });

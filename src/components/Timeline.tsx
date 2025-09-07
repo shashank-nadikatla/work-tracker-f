@@ -241,8 +241,8 @@ export const Timeline: React.FC<TimelineProps> = ({
                     variant={selectedTags.includes(tag) ? "default" : "outline"}
                     className={`cursor-pointer transition-all ${
                       selectedTags.includes(tag)
-                        ? getTagColor(tag)
-                        : "hover:bg-muted/50"
+                        ? `${getTagColor(tag)} hover:bg-primary/10`
+                        : "hover:bg-muted/30"
                     }`}
                     onClick={() => toggleTag(tag)}
                   >

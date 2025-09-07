@@ -95,11 +95,11 @@ export const Dashboard: React.FC = () => {
       <GameHeader />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="space-y-8">
+        <div className="stack-responsive">
           {/* Welcome Section */}
           <div className="text-center space-y-2 animate-fade-in">
             <h2 className="text-3xl font-bold text-foreground">
-              Welcome back, Developer! 👋
+              Welcome back, Engineer! 👋
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Track your daily coding journey, build amazing streaks, and level
@@ -111,14 +111,14 @@ export const Dashboard: React.FC = () => {
           <StreakTracker />
 
           {/* Main Content Grid */}
-          <div className="grid gap-8 lg:grid-cols-2">
+          <div className="grid grid-responsive lg:grid-cols-2">
             {/* Activity Logger */}
-            <div className="space-y-4">
+            <div className="stack-responsive">
               <ActivityLogger />
             </div>
 
             {/* Quick Actions & Progress */}
-            <div className="space-y-4">
+            <div className="stack-responsive">
               <QuickActions
                 onViewTimeline={handleViewTimeline}
                 onGenerateSummary={() => handleGenerateSummary(entries)}
